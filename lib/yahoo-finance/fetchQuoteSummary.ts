@@ -1,13 +1,25 @@
 import { unstable_noStore as noStore } from "next/cache"
 import yahooFinance from "yahoo-finance2"
+import type { QuoteSummaryOptions } from "@/node_modules/yahoo-finance2/dist/esm/src/modules/quoteSummary"
+import type { QuoteSummaryResult } from "@/node_modules/yahoo-finance2/dist/esm/src/modules/quoteSummary-iface"
 
-export async function fetchQuoteSummary(ticker: string) {
+import { ensureCrumb } from "./ensureCrumb"
+
+export async function fetchQuoteSummary(
+  ticker: string,
+  queryOptionsOverrides?: QuoteSummaryOptions
+) {
   noStore()
 
   try {
-    const response = await yahooFinance.quoteSummary(ticker, {
-      modules: ["summaryDetail", "defaultKeyStatistics"],
-    })
+    await ensureCrumb()
+
+    const response: QuoteSummaryResult = await yahooFinance.quoteSummary(
+      ticker,
+      queryOptionsOverrides ?? {
+        modules: ["summaryDetail", "defaultKeyStatistics"],
+      }
+    )
 
     return response
   } catch (error) {

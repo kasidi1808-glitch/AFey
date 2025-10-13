@@ -6,6 +6,8 @@ import type {
 } from "@/node_modules/yahoo-finance2/dist/esm/src/modules/screener"
 import yahooFinance from "yahoo-finance2"
 
+import { ensureCrumb } from "./ensureCrumb"
+
 const ITEMS_PER_PAGE = 40
 
 export async function fetchScreenerStocks(query: string, count?: number) {
@@ -21,6 +23,8 @@ export async function fetchScreenerStocks(query: string, count?: number) {
   }
 
   try {
+    await ensureCrumb()
+
     const response: ScreenerResult = await yahooFinance.screener(queryOptions, {
       validateResult: false,
     })

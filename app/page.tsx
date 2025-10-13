@@ -1,5 +1,4 @@
 import { DataTable } from "@/components/stocks/markets/data-table"
-import yahooFinance from "yahoo-finance2"
 import {
   Card,
   CardContent,
@@ -19,6 +18,7 @@ import {
   validateRange,
 } from "@/lib/yahoo-finance/fetchChartData"
 import { fetchStockSearch } from "@/lib/yahoo-finance/fetchStockSearch"
+import { fetchQuoteCombine } from "@/lib/yahoo-finance/fetchQuoteCombine"
 
 function isMarketOpen() {
   const now = new Date()
@@ -107,9 +107,7 @@ export default async function Home({
   )
   const news = await fetchStockSearch("^DJI", 1)
 
-  const promises = tickers.map(({ symbol }) =>
-    yahooFinance.quoteCombine(symbol)
-  )
+  const promises = tickers.map(({ symbol }) => fetchQuoteCombine(symbol))
   const results = await Promise.all(promises)
 
   const resultsWithTitles = results.map((result, index) => ({

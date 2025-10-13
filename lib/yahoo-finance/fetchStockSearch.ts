@@ -1,6 +1,7 @@
 import { unstable_noStore as noStore } from "next/cache"
 import yahooFinance from "yahoo-finance2"
 import type { SearchResult } from "@/node_modules/yahoo-finance2/dist/esm/src/modules/search"
+import { ensureCrumb } from "./ensureCrumb"
 
 export async function fetchStockSearch(ticker: string, newsCount: number = 5) {
   noStore()
@@ -12,6 +13,8 @@ export async function fetchStockSearch(ticker: string, newsCount: number = 5) {
   }
 
   try {
+    await ensureCrumb()
+
     const response: SearchResult = await yahooFinance.search(
       ticker,
       queryOptions
