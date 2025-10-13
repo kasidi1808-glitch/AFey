@@ -1,19 +1,44 @@
 import { cn } from "@/lib/utils"
 
 async function fetchSectorPerformance() {
-  const url = `https://financialmodelingprep.com/api/v3/sector-performance?apikey=${process.env.FMP_API_KEY}`
+  const apiKey = process.env.FMP_API_KEY
+
+  if (!apiKey) {
+    return null
+  }
+
+  const url = `https://financialmodelingprep.com/api/v3/sector-performance?apikey=${apiKey}`
   const options = {
     method: "GET",
     next: {
       revalidate: 3600,
     },
   }
-  const res = await fetch(url, options)
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch sector performance")
+  try {
+    const res = await fetch(url, options)
+
+    if (!res.ok) {
+      return null
+    }
+
+    const payload = await res.json()
+
+    const sectors = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload?.sectorPerformance)
+        ? payload.sectorPerformance
+        : null
+
+    if (!sectors?.length) {
+      return null
+    }
+
+    return sectors as Sector[]
+  } catch (error) {
+    console.error("Failed to fetch sector performance", error)
+    return null
   }
-  return res.json()
 }
 
 interface Sector {
@@ -22,9 +47,9 @@ interface Sector {
 }
 
 export default async function SectorPerformance() {
-  const data = (await fetchSectorPerformance()) as Sector[]
+  const data = await fetchSectorPerformance()
 
-  if (!data) {
+  if (!data?.length) {
     return null
   }
 
