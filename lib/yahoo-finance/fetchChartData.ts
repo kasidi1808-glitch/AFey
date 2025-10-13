@@ -7,6 +7,7 @@ import type { Interval, Range } from "@/types/yahoo-finance"
 import { DEFAULT_RANGE, INTERVALS_FOR_RANGE, VALID_RANGES } from "./constants"
 import { CalculateRange } from "@/lib/utils"
 import yahooFinance from "yahoo-finance2"
+import { ensureCrumb } from "./ensureCrumb"
 
 export const validateRange = (range: string): Range =>
   VALID_RANGES.includes(range as Range) ? (range as Range) : DEFAULT_RANGE
@@ -29,6 +30,8 @@ export async function fetchChartData(
   }
 
   try {
+    await ensureCrumb()
+
     const chartData: ChartResultArray = await yahooFinance.chart(
       ticker,
       queryOptions
