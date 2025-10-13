@@ -3,7 +3,9 @@ import { Cookie } from "tough-cookie"
 
 const CONFIG_FAKE_URL = "http://config.yf2/"
 const CONSENT_REDIRECT_PATTERN = /guce.yahoo/
-const DEFAULT_QUOTE_URL = "https://finance.yahoo.com/quote/AAPL"
+const DEFAULT_QUOTE_URL = "https://finance.yahoo.com/quote/AAPL/"
+const DEFAULT_QUOTE_HOSTNAME = new URL(DEFAULT_QUOTE_URL).hostname
+const DEFAULT_QUOTE_PROTOCOL = new URL(DEFAULT_QUOTE_URL).protocol
 const GET_CRUMB_URL = "https://query1.finance.yahoo.com/v1/test/getcrumb"
 const USER_AGENT = "Mozilla/5.0 (compatible; yahoo-finance2/2.11.2)"
 
@@ -272,10 +274,12 @@ async function requestCrumb(
         ? location
         : new URL(location, DEFAULT_QUOTE_URL).toString()
 
-      const { origin } = new URL(DEFAULT_QUOTE_URL)
       const redirectedUrl = new URL(normalizedLocation)
 
-      if (redirectedUrl.origin !== origin) {
+      if (
+        redirectedUrl.hostname !== DEFAULT_QUOTE_HOSTNAME ||
+        redirectedUrl.protocol !== DEFAULT_QUOTE_PROTOCOL
+      ) {
         throw new Error(`Unsupported redirect to ${location}, please report.`)
       }
 
