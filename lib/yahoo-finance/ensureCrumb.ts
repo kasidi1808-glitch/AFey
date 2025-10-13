@@ -270,25 +270,26 @@ async function requestCrumb(
       crumbSourceUrl = consentResult.url
       crumbFetchOptions = consentResult.options
     } else {
-      const normalizedLocation = location.startsWith("http")
-        ? location
-        : new URL(location, DEFAULT_QUOTE_URL).toString()
+      const normalizedUrl = new URL(location, DEFAULT_QUOTE_URL)
 
-      const redirectedUrl = new URL(normalizedLocation)
+      const isYahooHost =
+        normalizedUrl.hostname === DEFAULT_QUOTE_HOSTNAME ||
+        normalizedUrl.hostname.endsWith(".yahoo.com")
 
-      if (
-        redirectedUrl.hostname !== DEFAULT_QUOTE_HOSTNAME ||
-        redirectedUrl.protocol !== DEFAULT_QUOTE_PROTOCOL
-      ) {
+      if (!isYahooHost) {
         throw new Error(`Unsupported redirect to ${location}, please report.`)
       }
 
-      crumbSourceUrl = normalizedLocation
+      if (normalizedUrl.protocol !== "https:") {
+        normalizedUrl.protocol = "https:"
+      }
+
+      crumbSourceUrl = normalizedUrl.toString()
       crumbFetchOptions = {
         ...fetchOptions,
         headers: {
           ...(fetchOptions.headers as Record<string, string> | undefined),
-          cookie: await cookieJar.getCookieString(normalizedLocation),
+          cookie: await cookieJar.getCookieString(crumbSourceUrl),
         },
       }
     }
