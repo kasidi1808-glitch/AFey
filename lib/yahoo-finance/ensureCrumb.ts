@@ -253,7 +253,7 @@ async function requestCrumb(
   const location = response.headers.get("location")
 
   let crumbSourceUrl = DEFAULT_QUOTE_URL
-  let crumbFetchOptions = fetchOptions
+  let crumbFetchOptions: CrumbRequestInit = fetchOptions
 
   if (location) {
     if (CONSENT_REDIRECT_PATTERN.test(location)) {
@@ -268,7 +268,25 @@ async function requestCrumb(
       crumbSourceUrl = consentResult.url
       crumbFetchOptions = consentResult.options
     } else {
-      throw new Error(`Unsupported redirect to ${location}, please report.`)
+      const normalizedLocation = location.startsWith("http")
+        ? location
+        : new URL(location, DEFAULT_QUOTE_URL).toString()
+
+      const { origin } = new URL(DEFAULT_QUOTE_URL)
+      const redirectedUrl = new URL(normalizedLocation)
+
+      if (redirectedUrl.origin !== origin) {
+        throw new Error(`Unsupported redirect to ${location}, please report.`)
+      }
+
+      crumbSourceUrl = normalizedLocation
+      crumbFetchOptions = {
+        ...fetchOptions,
+        headers: {
+          ...(fetchOptions.headers as Record<string, string> | undefined),
+          cookie: await cookieJar.getCookieString(normalizedLocation),
+        },
+      }
     }
   }
 
