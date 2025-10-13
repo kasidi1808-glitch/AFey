@@ -3,51 +3,59 @@ import { cn } from "@/lib/utils"
 async function fetchSectorPerformance() {
   const apiKey = process.env.FMP_API_KEY
   const candidateKeys = apiKey ? [apiKey, "demo"] : ["demo"]
+  const endpoints = [
+    "https://financialmodelingprep.com/api/v3/stock/sectors-performance",
+    "https://financialmodelingprep.com/api/v3/sector-performance",
+  ]
 
   for (const key of candidateKeys) {
-    try {
-      const url = new URL(
-        "https://financialmodelingprep.com/api/v3/sector-performance",
-      )
-      url.searchParams.set("apikey", key)
+    for (const endpoint of endpoints) {
+      try {
+        const url = new URL(endpoint)
+        url.searchParams.set("apikey", key)
 
-      const res = await fetch(url, {
-        method: "GET",
-        next: {
-          // The sector performance endpoint updates throughout the day, so
-          // keep the cached data reasonably fresh while avoiding rate limits.
-          revalidate: 900,
-        },
-      })
+        const res = await fetch(url, {
+          method: "GET",
+          next: {
+            // The sector performance endpoint updates throughout the day, so
+            // keep the cached data reasonably fresh while avoiding rate limits.
+            revalidate: 900,
+          },
+        })
 
-      if (!res.ok) {
-        console.warn(
-          `Failed to fetch sector performance with key "${key}" (${res.status})`,
+        if (!res.ok) {
+          console.warn(
+            `Failed to fetch sector performance from "${endpoint}" with key "${key}" (${res.status})`,
+          )
+          continue
+        }
+
+        const payload = await res.json()
+
+        const sectors = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.sectorPerformance)
+            ? payload.sectorPerformance
+            : Array.isArray(payload?.sectorsPerformance)
+              ? payload.sectorsPerformance
+              : Array.isArray(payload?.data)
+                ? payload.data
+                : null
+
+        if (!sectors?.length) {
+          console.warn(
+            `Empty sector performance payload received from "${endpoint}" with key "${key}"`,
+          )
+          continue
+        }
+
+        return sectors as Sector[]
+      } catch (error) {
+        console.error(
+          `Failed to fetch sector performance from "${endpoint}" with key "${key}"`,
+          error,
         )
-        continue
       }
-
-      const payload = await res.json()
-
-      const sectors = Array.isArray(payload)
-        ? payload
-        : Array.isArray(payload?.sectorPerformance)
-          ? payload.sectorPerformance
-          : null
-
-      if (!sectors?.length) {
-        console.warn(
-          `Empty sector performance payload received with key "${key}"`,
-        )
-        continue
-      }
-
-      return sectors as Sector[]
-    } catch (error) {
-      console.error(
-        `Failed to fetch sector performance with key "${key}"`,
-        error,
-      )
     }
   }
 
