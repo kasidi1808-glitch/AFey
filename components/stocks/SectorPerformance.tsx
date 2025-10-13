@@ -2,43 +2,56 @@ import { cn } from "@/lib/utils"
 
 async function fetchSectorPerformance() {
   const apiKey = process.env.FMP_API_KEY
+  const candidateKeys = apiKey ? [apiKey, "demo"] : ["demo"]
 
-  if (!apiKey) {
-    return null
-  }
+  for (const key of candidateKeys) {
+    try {
+      const url = new URL(
+        "https://financialmodelingprep.com/api/v3/sector-performance",
+      )
+      url.searchParams.set("apikey", key)
 
-  const url = `https://financialmodelingprep.com/api/v3/sector-performance?apikey=${apiKey}`
-  const options = {
-    method: "GET",
-    next: {
-      revalidate: 3600,
-    },
-  }
+      const res = await fetch(url, {
+        method: "GET",
+        next: {
+          // The sector performance endpoint updates throughout the day, so
+          // keep the cached data reasonably fresh while avoiding rate limits.
+          revalidate: 900,
+        },
+      })
 
-  try {
-    const res = await fetch(url, options)
+      if (!res.ok) {
+        console.warn(
+          `Failed to fetch sector performance with key "${key}" (${res.status})`,
+        )
+        continue
+      }
 
-    if (!res.ok) {
-      return null
+      const payload = await res.json()
+
+      const sectors = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.sectorPerformance)
+          ? payload.sectorPerformance
+          : null
+
+      if (!sectors?.length) {
+        console.warn(
+          `Empty sector performance payload received with key "${key}"`,
+        )
+        continue
+      }
+
+      return sectors as Sector[]
+    } catch (error) {
+      console.error(
+        `Failed to fetch sector performance with key "${key}"`,
+        error,
+      )
     }
-
-    const payload = await res.json()
-
-    const sectors = Array.isArray(payload)
-      ? payload
-      : Array.isArray(payload?.sectorPerformance)
-        ? payload.sectorPerformance
-        : null
-
-    if (!sectors?.length) {
-      return null
-    }
-
-    return sectors as Sector[]
-  } catch (error) {
-    console.error("Failed to fetch sector performance", error)
-    return null
   }
+
+  return null
 }
 
 interface Sector {
