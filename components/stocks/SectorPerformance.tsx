@@ -46,29 +46,60 @@ interface Sector {
   changesPercentage: string
 }
 
+interface ParsedSector {
+  sector: string
+  change: number
+}
+
+function parseSectors(data: Sector[]): ParsedSector[] {
+  return data
+    .map((sector) => ({
+      sector: sector.sector,
+      change: Number.parseFloat(sector.changesPercentage),
+    }))
+    .filter((sector): sector is ParsedSector => Number.isFinite(sector.change))
+}
+
+function renderEmptyState() {
+  return (
+    <div className="flex min-h-[6rem] items-center justify-center rounded-md border border-dashed border-neutral-200 px-4 py-6 text-sm text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">
+      Sector performance data is currently unavailable.
+    </div>
+  )
+}
+
 export default async function SectorPerformance() {
   const data = await fetchSectorPerformance()
 
   if (!data?.length) {
-    return null
+    return renderEmptyState()
   }
 
-  const totalChangePercentage = data.reduce((total, sector) => {
-    return total + parseFloat(sector.changesPercentage)
+  const sectors = parseSectors(data)
+
+  if (!sectors.length) {
+    return renderEmptyState()
+  }
+
+  const totalChangePercentage = sectors.reduce((total, sector) => {
+    return total + sector.change
   }, 0)
 
-  const averageChangePercentage =
-    (totalChangePercentage / data.length).toFixed(2) + "%"
+  const averageChangePercentage = sectors.length
+    ? totalChangePercentage / sectors.length
+    : 0
 
-  const allSectors = {
-    sector: "All sectors",
-    changesPercentage: averageChangePercentage,
-  }
-  data.unshift(allSectors)
+  const sectorsWithAverage: ParsedSector[] = [
+    {
+      sector: "All sectors",
+      change: Number.parseFloat(averageChangePercentage.toFixed(2)),
+    },
+    ...sectors,
+  ]
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-      {data.map((sector: Sector) => (
+      {sectorsWithAverage.map((sector) => (
         <div
           key={sector.sector}
           className="flex w-full flex-row items-center justify-between text-sm"
@@ -77,12 +108,12 @@ export default async function SectorPerformance() {
           <span
             className={cn(
               "w-[4rem] min-w-fit rounded-md px-2 py-0.5 text-right transition-colors",
-              parseFloat(sector.changesPercentage) > 0
+              sector.change > 0
                 ? "bg-gradient-to-l from-green-300 text-green-800 dark:from-green-950 dark:text-green-400"
                 : "bg-gradient-to-l from-red-300 text-red-800 dark:from-red-950 dark:text-red-500"
             )}
           >
-            {parseFloat(sector.changesPercentage).toFixed(2) + "%"}
+            {sector.change.toFixed(2) + "%"}
           </span>
         </div>
       ))}
