@@ -1,9 +1,7 @@
 import { unstable_noStore as noStore } from "next/cache"
 import yahooFinance from "yahoo-finance2"
-import type {
-  QuoteSummaryOptions,
-  QuoteSummaryResult,
-} from "@/node_modules/yahoo-finance2/dist/esm/src/modules/quoteSummary"
+import type { QuoteSummaryOptions } from "@/node_modules/yahoo-finance2/dist/esm/src/modules/quoteSummary"
+import type { QuoteSummaryResult } from "@/node_modules/yahoo-finance2/dist/esm/src/modules/quoteSummary-iface"
 
 import { ensureCrumb } from "./ensureCrumb"
 
