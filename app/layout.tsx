@@ -6,6 +6,8 @@ import { ThemeProvider } from "@/components/ui/theme-provider"
 import Navigation from "@/components/ui/navigation"
 import Footer from "@/components/ui/footer"
 
+export const runtime = "nodejs"
+
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
